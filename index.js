@@ -2,9 +2,10 @@ require('dotenv').config()
 const express = require('express');
 const cors = require('cors');
 const app = express()
+const jwt = require('jsonwebtoken');
 const port = process.env.PORT || 5000;
 
-app.use(express())
+app.use(express.json())
 app.use(cors())
 
 
@@ -31,11 +32,14 @@ async function run() {
 
 
 
+    const userCollection = client.db("techspot").collection("users")
+
 
      // jwt related api
      app.post( '/jwt', async( req, res ) => {
-      
+      console.log('terichu ')
         const user = req.body;
+        console.log(user)
         const token = jwt.sign(
           user,
           process.env.ACCESS_TOKEN_SECRET,{
