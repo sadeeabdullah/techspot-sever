@@ -13,7 +13,7 @@ app.use(cors())
 
 
 
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.ncskwvc.mongodb.net/?retryWrites=true&w=majority`;
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
@@ -37,9 +37,7 @@ async function run() {
 
      // jwt related api
      app.post( '/jwt', async( req, res ) => {
-      console.log('terichu ')
         const user = req.body;
-        console.log(user)
         const token = jwt.sign(
           user,
           process.env.ACCESS_TOKEN_SECRET,{
@@ -111,6 +109,44 @@ async function run() {
         }
         next();
       }
+
+       // getting all the user data
+    app.get( '/users',verifyToken,verifyAdmin, async( req, res ) => {
+      
+      const result = await userCollection.find().toArray();
+      res.send(result)
+    })
+
+
+    // making moderator and admin
+    app.patch('/users/admin/:id',verifyToken,verifyAdmin, async( req, res ) => {
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id)};
+      const options = {
+        upsert: true
+      }
+      const updatedDoc={
+        $set:{
+          role: 'admin'
+        }
+      }
+      const result = await userCollection.updateOne(filter,updatedDoc,options)
+      res.send(result)
+    })
+    app.patch('/users/moderator/:id',verifyToken,verifyAdmin, async( req, res ) => {
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id)};
+      const options = {
+        upsert: true
+      }
+      const updatedDoc={
+        $set:{
+          role: 'moderator'
+        }
+      }
+      const result = await userCollection.updateOne(filter,updatedDoc,options)
+      res.send(result)
+    })
 
 
     // Send a ping to confirm a successful connection
