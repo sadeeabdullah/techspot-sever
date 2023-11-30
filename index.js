@@ -71,7 +71,7 @@ async function run() {
   
       // MIDDLEWARES TO VERIFY TOKEN
       const verifyToken = (req, res, next) =>{
-        console.log('inside verify token ',req?.headers)
+        // console.log('inside verify token ',req?.headers)
         if(!req?.headers?.authorization){
           return res.status(401).send( { message: "unauthorized access" } )
         }
@@ -207,13 +207,21 @@ async function run() {
 
     // reviews here
 
-    app.post('/reviews', async(req,res)=>{
+    app.post('/reviews',verifyToken, verifyModerator, async(req,res)=>{
       const item = req.body;
       const result = await reviewsCollection.insertOne(item)
       console.log(result)
       res.send(result)
     })
 
+    //  to get all the review
+    app.get('/reviews',async(req,res)=>{
+      const result = await reviewsCollection.find().toArray();
+      res.send(result)
+    })
+    
+    
+    
     // for getting reviews data
     app.get('/reviews/:id', async(req,res)=>{
       const id = req.params.id;
