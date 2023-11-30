@@ -34,6 +34,7 @@ async function run() {
 
     const userCollection = client.db("techspot").collection("users")
     const productsCollection = client.db("techspot").collection("Products")
+    const reviewsCollection = client.db("techspot").collection("reviews")
 
 
      // jwt related api
@@ -180,7 +181,12 @@ async function run() {
       const result = await productsCollection.find().toArray();
       res.send(result)
     })
-
+    app.get('/productDetails/:id',async(req,res) =>{
+      const id = req.params.id;
+      const query ={_id:new ObjectId(id)};
+      const result = await productsCollection.findOne(query);
+      res.send(result)
+    })
 
     app.patch('/products/:id', async(req,res)=>{
       const id = req.params.id;
@@ -197,6 +203,15 @@ async function run() {
       res.send(result)
     })
 
+
+
+    // reviews here
+
+    app.post('/reviews',async(req,res)=>{
+      const review = req.body;
+      const result = await reviewsCollection.insertOne(review)
+      res.send(result)
+  })
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
