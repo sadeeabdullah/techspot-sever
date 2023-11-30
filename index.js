@@ -33,6 +33,7 @@ async function run() {
 
 
     const userCollection = client.db("techspot").collection("users")
+    const productsCollection = client.db("techspot").collection("Products")
 
 
      // jwt related api
@@ -111,21 +112,22 @@ async function run() {
       }
 
 
+
+
+
+
        // verify its admin or not
-    app.get('/users/admin/:email',verifyToken,async( req,res ) =>{
+    app.get('/users/userRole/:email',verifyToken,async( req,res ) =>{
       const email = req.params.email;
       if( email !== req?.decoded?.email){
         return res.status(403).send({ message: ' forbidden access' })
       }
+      const role = {projection:{_id:0,role:1}}
       const query = { email: email};
-      const user = await userCollection.findOne(query)
-      let admin =false;
-      if( user ){
-        admin = user?.role === 'admin'
-      }
-      console.log({admin})
-      res.send({admin})
+      const user = await userCollection.findOne(query,role)
+      res.send(user)
     })
+     
 
 
 
@@ -164,6 +166,34 @@ async function run() {
         }
       }
       const result = await userCollection.updateOne(filter,updatedDoc,options)
+      res.send(result)
+    })
+
+
+
+
+
+
+    // product collection get and post method here
+
+    app.get('/products',async(req,res)=>{
+      const result = await productsCollection.find().toArray();
+      res.send(result)
+    })
+
+
+    app.patch('/products/:id', async(req,res)=>{
+      const id = req.params.id;
+      console.log(id)
+      const item = req.body
+      console.log(item.upvotePlus)
+      const filter = { _id: new ObjectId(id) };
+      const updatedDoc={
+        $set:{
+          upvoteCount: item.upvotePlus
+        }
+      }
+      const result = await productsCollection.updateOne(filter,updatedDoc)
       res.send(result)
     })
 
