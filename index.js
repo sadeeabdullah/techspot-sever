@@ -207,11 +207,21 @@ async function run() {
 
     // reviews here
 
-    app.post('/reviews',async(req,res)=>{
-      const review = req.body;
-      const result = await reviewsCollection.insertOne(review)
+    app.post('/reviews', async(req,res)=>{
+      const item = req.body;
+      const result = await reviewsCollection.insertOne(item)
+      console.log(result)
       res.send(result)
-  })
+    })
+
+    // for getting reviews data
+    app.get('/reviews/:id', async(req,res)=>{
+      const id = req.params.id;
+      const query = {productId : id}
+      console.log(query)
+      const result = await reviewsCollection.find(query).toArray();
+      res.send(result)
+    })
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
