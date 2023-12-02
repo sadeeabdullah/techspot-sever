@@ -192,6 +192,18 @@ async function run() {
       const result = await productsCollection.findOne(query);
       res.send(result)
     })
+    app.get('/products/:email',async(req,res) =>{
+      const email = req.params.email;
+      const query ={ownerEmail: email};
+      const result = await productsCollection.find(query).toArray();
+      res.send(result)
+    })
+    app.get('/products/:id',async(req,res) =>{
+      const email = req.params.email;
+      const query ={_id:new ObjectId(id)};
+      const result = await productsCollection.deleteOne(query);
+      res.send(result)
+    })
 
     app.patch('/products/:id', async(req,res)=>{
       const id = req.params.id;
@@ -211,13 +223,28 @@ async function run() {
 
     // making featured
 
-    app.patch('/feature/:id',async(req,res)=>{
+    app.patch('/feature/:id',verifyToken,verifyModerator,async(req,res)=>{
       const id = req.params.id;
       const updates = req.body;
       const filter = {_id: new ObjectId(id)};
       const updatedDoc={
         $set:{
           status:updates.status
+        }
+      }
+
+      const result = await productsCollection.updateOne(filter,updatedDoc);
+      res.send(result)
+    })
+    // making featured
+
+    app.patch('/acceptReject/:id',verifyToken,verifyModerator,async(req,res)=>{
+      const id = req.params.id;
+      const updates = req.body;
+      const filter = {_id: new ObjectId(id)};
+      const updatedDoc={
+        $set:{
+          productStatus:updates.productStatus
         }
       }
 
