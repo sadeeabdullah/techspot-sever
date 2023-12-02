@@ -35,6 +35,7 @@ async function run() {
     const userCollection = client.db("techspot").collection("users")
     const productsCollection = client.db("techspot").collection("Products")
     const reviewsCollection = client.db("techspot").collection("reviews")
+    const reportsCollection = client.db("techspot").collection("reports")
 
 
      // jwt related api
@@ -176,7 +177,11 @@ async function run() {
 
 
     // product collection get and post method here
-
+    app.post('/products',async(req,res)=>{
+      const item = req.body;
+      const result = await productsCollection.insertOne(item);
+      res.send(result)
+    })
     app.get('/products',async(req,res)=>{
       const result = await productsCollection.find().toArray();
       res.send(result)
@@ -204,10 +209,27 @@ async function run() {
     })
 
 
+    // making featured
+
+    app.patch('/feature/:id',async(req,res)=>{
+      const id = req.params.id;
+      const updates = req.body;
+      const filter = {_id: new ObjectId(id)};
+      const updatedDoc={
+        $set:{
+          status:updates.status
+        }
+      }
+
+      const result = await productsCollection.updateOne(filter,updatedDoc);
+      res.send(result)
+    })
+
+
 
     // reviews here
 
-    app.post('/reviews',verifyToken, verifyModerator, async(req,res)=>{
+    app.post('/reviews',async(req,res)=>{
       const item = req.body;
       const result = await reviewsCollection.insertOne(item)
       console.log(result)
@@ -215,21 +237,100 @@ async function run() {
     })
 
     //  to get all the review
-    app.get('/reviews',async(req,res)=>{
-      const result = await reviewsCollection.find().toArray();
+    app.patch('/reviews/:id',async(req,res)=>{
+      const id = req.params.id;
+      const item = req.body;
+      const filter = { _id: new ObjectId(id)}
+      const updatedDoc ={
+        $push:{
+          reviews:item
+        }
+      }
+      const result = await productsCollection.updateOne(filter,updatedDoc)
       res.send(result)
     })
+
+    // reports here 
     
-    
+    app.post('/reports',async(req,res)=>{
+      const item = req.body;
+      const result = await reportsCollection.insertOne(item)
+      res.send(result)
+    })
+
+     //  to get all the report
+     app.get('/reports',async(req,res)=>{
+      const result = await reportsCollection.find().toArray();
+      res.send(result)
+    })
+
+    // to delete the report from the report collection
+    app.delete('/reports/:id',verifyToken,verifyModerator, async( req,res) => {
+      const id = req.params.id;
+      const query = { _id : new ObjectId(id)}
+      const result = await reportsCollection.deleteOne(query);
+      res.send(result)
+    })
+    // to delete the product from the report collection
+    app.delete('/products/:id', async( req,res) => {
+      const id = req.params.id;
+      const query = { _id : new ObjectId(id)}
+      const result = await productsCollection.deleteOne(query);
+      res.send(result)
+    })
     
     // for getting reviews data
     app.get('/reviews/:id', async(req,res)=>{
       const id = req.params.id;
       const query = {productId : id}
-      console.log(query)
       const result = await reviewsCollection.find(query).toArray();
       res.send(result)
     })
+
+
+
+        // payment intent 
+        app.post('/create-payment-intent',async(req, res) =>{
+          const {price} = req.body;
+          const amount = parseInt(price * 100 )
+          console.log(amount,'amount inside the intent')
+          
+          const paymentIntent = await stripe.paymentIntents.create({
+            amount: amount,
+            currency: 'usd',
+            payment_method_types:['card']
+          });
+          res.send({
+            clientSecret:paymentIntent.client_secret
+          })
+        })
+        app.get('/payments',async(req,res)=>{
+          const result =  await paymentCollection.find().toArray();
+          res.send(result)
+        })
+    
+        // payment history 
+        app.get('/payments/:email',verifyToken,async(req,res)=>{
+          const query = {email:req.params.email}
+          if (req.params.email !== req.decoded.email) {
+            res.status(403).send({message :'forbidden access'})
+          }
+          const result = await paymentCollection.find(query).toArray();
+          res.send(result)
+        })
+    
+        app.post('/payments',async(req,res)=>{
+          const payment = req.body;
+          const paymentResult = await paymentCollection.insertOne(payment);
+    
+          // carefully delete each item from the cart
+          console.log('payment info',payment)
+          const query= {_id:{
+            $in:payment.cartIds.map(id=> new ObjectId(id))
+          }}
+          const deleteResult = await cartsCollection.deleteMany(query)
+          res.send({paymentResult,deleteResult})
+        })
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
