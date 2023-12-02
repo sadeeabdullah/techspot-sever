@@ -219,6 +219,22 @@ async function run() {
       const result = await productsCollection.updateOne(filter,updatedDoc)
       res.send(result)
     })
+    app.patch('/update/:id', async(req,res)=>{
+      const id = req.params.id;
+      const item = req.body
+      console.log(item.upvotePlus)
+      const filter = { _id: new ObjectId(id) };
+      const updatedDoc={
+        $set:{
+          productName: item.productName,
+          productPrice: item.productPrice,
+            description: item.description,
+            externalLink:item.externalLink
+        }
+      }
+      const result = await productsCollection.updateOne(filter,updatedDoc)
+      res.send(result)
+    })
 
 
     // making featured
